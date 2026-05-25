@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  DRIVER
+  ADMIN
+}
+
+enum DriverVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum DriverAvailabilityStatus {
+  ONLINE
+  OFFLINE
+  BUSY
+}
+
+enum VehicleType {
+  MOTORBIKE
+  THREE_WHEELER
+  TRUCK
+}
+
+enum OrderStatus {
+  PENDING
+  SEARCHING_DRIVER
+  DRIVER_ASSIGNED
+  DRIVER_ARRIVING_PICKUP
+  PICKED_UP
+  DELIVERING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  WALLET
+  BANK_TRANSFER
+  VIET_QR
+}
+
+enum WalletTransactionType {
+  CREDIT
+  DEBIT
+  HOLD
+  RELEASE
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  REJECTED
+}
+
+model User {
+  id            String         @id @default(cuid())
+  phone         String         @unique
+  fullName      String?
+  email         String?
+  avatarUrl     String?
+  role          UserRole       @default(CUSTOMER)
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  driverProfile DriverProfile?
+  customerOrders Order[]       @relation("CustomerOrders")
+  adminReviewedPayouts PayoutRequest[] @relation("PayoutReviewer")
+}
+
+model DriverProfile {
+  id                 String                    @id @default(cuid())
+  userId             String                    @unique
+  user               User                      @relation(fields: [userId], references: [id])
+  verificationStatus DriverVerificationStatus  @default(PENDING)
+  availabilityStatus DriverAvailabilityStatus  @default(OFFLINE)
+  idCardFrontUrl     String?
+  idCardBackUrl      String?
+  driverLicenseUrl   String?
+  rejectionReason    String?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  vehicles           Vehicle[]
+  assignedOrders     Order[]                   @relation("DriverOrders")
+  wallet             Wallet?
+  payoutRequests     PayoutRequest[]
+}
+
+model Vehicle {
+  id              String        @id @default(cuid())
+  driverProfileId String
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id])
+  type            VehicleType
+  licensePlate    String
+  brand           String?
+  model           String?
+  maxWeightKg     Int?
+  imageUrl        String?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  orders          Order[]
+  fareConfigs     FareConfig[]
+}
+
+model Order {
+  id                 String        @id @default(cuid())
+  code               String        @unique
+  customerId         String
+  customer           User          @relation("CustomerOrders", fields: [customerId], references: [id])
+  driverProfileId    String?
+  driverProfile      DriverProfile? @relation("DriverOrders", fields: [driverProfileId], references: [id])
+  vehicleId          String?
+  vehicle            Vehicle?      @relation(fields: [vehicleId], references: [id])
+  status             OrderStatus   @default(PENDING)
+  paymentMethod      PaymentMethod @default(CASH)
+  pickupAddress      String
+  pickupLat          Decimal       @db.Decimal(10, 7)
+  pickupLng          Decimal       @db.Decimal(10, 7)
+  dropoffAddress     String
+  dropoffLat         Decimal       @db.Decimal(10, 7)
+  dropoffLng         Decimal       @db.Decimal(10, 7)
+  distanceKm         Decimal?      @db.Decimal(10, 2)
+  baseFare           Int           @default(0)
+  surcharge          Int           @default(0)
+  discount           Int           @default(0)
+  totalFare          Int           @default(0)
+  driverPayout       Int           @default(0)
+  pickupProofUrl     String?
+  deliveryProofUrl   String?
+  cancelReason       String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  completedAt        DateTime?
+  walletTransactions WalletTransaction[]
+}
+
+model FareConfig {
+  id             String      @id @default(cuid())
+  vehicleType    VehicleType
+  vehicleId      String?
+  vehicle        Vehicle?    @relation(fields: [vehicleId], references: [id])
+  openingFare    Int
+  minimumKm      Decimal     @db.Decimal(10, 2)
+  perKmFare      Int
+  commissionRate Decimal     @db.Decimal(5, 2)
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model Wallet {
+  id              String              @id @default(cuid())
+  driverProfileId String              @unique
+  driverProfile   DriverProfile       @relation(fields: [driverProfileId], references: [id])
+  availableBalance Int                @default(0)
+  holdingBalance   Int                @default(0)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  transactions     WalletTransaction[]
+  payoutRequests   PayoutRequest[]
+}
+
+model WalletTransaction {
+  id          String                @id @default(cuid())
+  walletId    String
+  wallet      Wallet                @relation(fields: [walletId], references: [id])
+  orderId     String?
+  order       Order?                @relation(fields: [orderId], references: [id])
+  type        WalletTransactionType
+  amount      Int
+  description String
+  createdAt   DateTime             @default(now())
+}
+
+model PayoutRequest {
+  id                String        @id @default(cuid())
+  walletId          String
+  wallet            Wallet        @relation(fields: [walletId], references: [id])
+  driverProfileId   String
+  driverProfile     DriverProfile @relation(fields: [driverProfileId], references: [id])
+  amount            Int
+  bankName          String
+  bankAccountNumber String
+  bankAccountName   String
+  status            PayoutStatus  @default(PENDING)
+  rejectionReason   String?
+  bankReferenceCode String?
+  reviewedById      String?
+  reviewedBy        User?         @relation("PayoutReviewer", fields: [reviewedById], references: [id])
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}

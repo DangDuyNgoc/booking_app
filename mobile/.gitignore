@@ -1,0 +1,14 @@
+node_modules/
+
+.env
+.env.*
+!.env.example
+
+.expo/
+.expo-shared/
+dist/
+dist-test/
+web-build/
+coverage/
+
+*.log

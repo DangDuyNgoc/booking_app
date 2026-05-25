@@ -28,6 +28,10 @@ Create the database manually if it does not exist:
 
 ```bash
 createdb -U postgres "booking-app"
+
+npm run prisma:generate
+
+
 ```
 
 ## Admin Web

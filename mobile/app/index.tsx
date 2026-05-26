@@ -1,86 +1,149 @@
-import { Link } from "expo-router";
+﻿import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { theme } from "../lib/theme";
 
-const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
+type RoleCardProps = {
+  title: string;
+  subtitle: string;
+  emoji: string;
+  href: "/customer" | "/driver";
+  rightIcon: string;
+};
 
-export default function LoginScreen() {
+function RoleCard({ title, subtitle, emoji, href, rightIcon }: RoleCardProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.eyebrow}>Booking Ship</Text>
-      <Text style={styles.title}>Login</Text>
-      <Text style={styles.copy}>Phone and OTP login will be implemented in the auth module.</Text>
-      <Text style={styles.api}>API: {apiUrl}</Text>
-      <View style={styles.actions}>
-        <Link href="/customer" asChild>
-          <Pressable style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>Customer mode</Text>
-          </Pressable>
-        </Link>
-        <Link href="/driver" asChild>
-          <Pressable style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Driver mode</Text>
-          </Pressable>
-        </Link>
+    <Link href={href} asChild>
+      <Pressable style={styles.roleCard}>
+        <View style={styles.avatarWrap}>
+          <Text style={styles.avatarEmoji}>{emoji}</Text>
+        </View>
+
+        <View style={styles.roleTitleRow}>
+          <Text style={styles.roleTitle}>{title}</Text>
+          <Text style={styles.roleIcon}>{rightIcon}</Text>
+        </View>
+
+        <Text style={styles.roleSubtitle}>{subtitle}</Text>
+      </Pressable>
+    </Link>
+  );
+}
+
+export default function RoleSelectionScreen() {
+  return (
+    <View style={styles.page}>
+      <View style={styles.headerBlock}>
+        <Text style={styles.headerTitle}>Bạn là ai?</Text>
+        <Text style={styles.headerCopy}>
+          Vui lòng chọn vai trò của bạn để tiếp tục trải nghiệm dịch vụ ShipLogistics một cách tốt
+          nhất.
+        </Text>
+      </View>
+
+      <View style={styles.cards}>
+        <RoleCard
+          title="Tôi là Khách hàng"
+          subtitle="Gửi hàng nhanh chóng, theo dõi đơn hàng dễ dàng."
+          emoji="🎁"
+          href="/customer"
+          rightIcon="✔"
+        />
+
+        <RoleCard
+          title="Tôi là Tài xế"
+          subtitle="Nhận chuyến ngay, gia tăng thu nhập mỗi ngày."
+          emoji="🛵"
+          href="/driver"
+          rightIcon="🏍"
+        />
+      </View>
+
+      <View style={styles.supportRow}>
+        <Text style={styles.supportText}>◌ Bạn cần hỗ trợ?</Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  page: {
     flex: 1,
-    justifyContent: "center",
-    padding: 24,
-    backgroundColor: "#F8FAFC"
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: 56,
+    paddingBottom: theme.spacing.xl
   },
-  eyebrow: {
-    color: "#0F52BA",
+  headerBlock: {
+    alignItems: "center"
+  },
+  headerTitle: {
+    color: theme.colors.primaryDark,
+    fontSize: 39,
+    fontWeight: "800"
+  },
+  headerCopy: {
+    color: theme.colors.textSecondary,
     fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 8,
-    textTransform: "uppercase"
+    lineHeight: 19,
+    marginTop: theme.spacing.sm,
+    maxWidth: 310,
+    textAlign: "center"
   },
-  title: {
-    color: "#0F172A",
-    fontSize: 32,
-    fontWeight: "800",
-    marginBottom: 12
+  cards: {
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.xl
   },
-  copy: {
-    color: "#475569",
-    fontSize: 16,
-    lineHeight: 24
-  },
-  api: {
-    color: "#64748B",
-    fontSize: 12,
-    marginTop: 16
-  },
-  actions: {
-    gap: 12,
-    marginTop: 32
-  },
-  primaryButton: {
+  roleCard: {
     alignItems: "center",
-    backgroundColor: "#0F52BA",
-    borderRadius: 12,
-    paddingVertical: 14
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700"
-  },
-  secondaryButton: {
-    alignItems: "center",
-    borderColor: "#0F52BA",
-    borderRadius: 12,
+    backgroundColor: "#F8FBFF",
+    borderColor: "#DCE6F3",
+    borderRadius: theme.radius.xl,
     borderWidth: 1,
-    paddingVertical: 14
+    minHeight: 210,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg
   },
-  secondaryButtonText: {
-    color: "#0F52BA",
-    fontSize: 16,
+  avatarWrap: {
+    alignItems: "center",
+    backgroundColor: "#D5DEE7",
+    borderRadius: theme.radius.pill,
+    height: 116,
+    justifyContent: "center",
+    width: 116
+  },
+  avatarEmoji: {
+    fontSize: 54
+  },
+  roleTitleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    marginTop: theme.spacing.md
+  },
+  roleTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 36,
+    fontWeight: "800"
+  },
+  roleIcon: {
+    color: theme.colors.primary,
+    fontSize: 18,
     fontWeight: "700"
+  },
+  roleSubtitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: theme.spacing.sm,
+    textAlign: "center"
+  },
+  supportRow: {
+    alignItems: "center",
+    marginTop: "auto"
+  },
+  supportText: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "600"
   }
 });

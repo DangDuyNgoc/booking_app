@@ -1,32 +1,106 @@
-import { StyleSheet, Text, View } from "react-native";
+﻿import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { BottomTabBar } from "../components/customer/BottomTabBar";
+import { HomeHeader } from "../components/customer/HomeHeader";
+import { OrderProgressCard } from "../components/customer/OrderProgressCard";
+import { PromoBanner } from "../components/customer/PromoBanner";
+import { ServiceCard } from "../components/customer/ServiceCard";
+import { SectionTitle } from "../components/ui/AppPrimitives";
+import { SearchInput } from "../components/ui/SearchInput";
+import { theme } from "../lib/theme";
 
 export default function CustomerScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Customer Home</Text>
-      <Text style={styles.copy}>
-        This screen will host map search, pickup/dropoff input, vehicle selection, booking, and
-        live order tracking.
-      </Text>
+    <View style={styles.page}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <HomeHeader />
+        <SearchInput />
+        <View style={styles.block}>
+          <PromoBanner />
+        </View>
+
+        <SectionTitle>Dịch vụ của chúng tôi</SectionTitle>
+
+        <View style={styles.serviceRows}>
+          <View style={styles.mainCol}>
+            <ServiceCard active icon="🏍" label="Giao Xe Máy" />
+          </View>
+          <View style={styles.sideCol}>
+            <ServiceCard icon="🚚" label="Giao Xe Tải" />
+            <ServiceCard icon="🍴" label="Đồ Ăn" />
+          </View>
+        </View>
+
+        <View style={styles.miniActions}>
+          <ServiceCard icon="🚕" label="Gọi Xe" />
+          <ServiceCard icon="🛍" label="Đi Chợ" />
+          <ServiceCard icon="📦" label="Gửi Hàng" />
+          <ServiceCard icon="▦" label="Thêm" />
+        </View>
+
+        <View style={styles.block}>
+          <SectionTitle>Đơn hàng đang giao</SectionTitle>
+          <OrderProgressCard />
+        </View>
+      </ScrollView>
+
+      <View style={styles.fab}>
+        <Text style={styles.fabIcon}>🎧</Text>
+      </View>
+      <View style={styles.bottomBarWrap}>
+        <BottomTabBar activeTab="home" />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  page: {
+    backgroundColor: theme.colors.background,
+    flex: 1
+  },
+  content: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
+    paddingBottom: 170
+  },
+  block: {
+    marginTop: theme.spacing.lg
+  },
+  serviceRows: {
+    flexDirection: "row",
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.md
+  },
+  mainCol: {
+    flex: 1.2
+  },
+  sideCol: {
     flex: 1,
-    padding: 24,
-    backgroundColor: "#F8FAFC"
+    gap: theme.spacing.md
   },
-  title: {
-    color: "#0F172A",
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 12
+  miniActions: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg
   },
-  copy: {
-    color: "#475569",
-    fontSize: 16,
-    lineHeight: 24
+  fab: {
+    alignItems: "center",
+    backgroundColor: theme.colors.warning,
+    borderRadius: theme.radius.pill,
+    height: 48,
+    justifyContent: "center",
+    position: "absolute",
+    right: theme.spacing.lg,
+    bottom: 112,
+    width: 48
+  },
+  fabIcon: {
+    fontSize: 21
+  },
+  bottomBarWrap: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0
   }
 });

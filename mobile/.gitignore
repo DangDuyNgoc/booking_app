@@ -10,5 +10,6 @@ dist/
 dist-test/
 web-build/
 coverage/
+requirements.md
 
 *.log

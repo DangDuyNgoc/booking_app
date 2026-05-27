@@ -12,6 +12,17 @@ enum UserRole {
   ADMIN
 }
 
+enum OtpChannel {
+  EMAIL
+  PHONE
+}
+
+enum OtpPurpose {
+  REGISTER
+  LOGIN
+  RESET_PASSWORD
+}
+
 enum DriverVerificationStatus {
   PENDING
   APPROVED
@@ -65,9 +76,12 @@ enum PayoutStatus {
 
 model User {
   id            String         @id @default(cuid())
-  phone         String         @unique
+  phone         String?        @unique
+  phoneVerifiedAt DateTime?
+  email         String?        @unique
+  emailVerifiedAt DateTime?
+  passwordHash  String?
   fullName      String?
-  email         String?
   avatarUrl     String?
   role          UserRole       @default(CUSTOMER)
   isActive      Boolean        @default(true)
@@ -76,6 +90,39 @@ model User {
   driverProfile DriverProfile?
   customerOrders Order[]       @relation("CustomerOrders")
   adminReviewedPayouts PayoutRequest[] @relation("PayoutReviewer")
+  refreshTokens RefreshToken[]
+}
+
+model OtpVerification {
+  id         String    @id @default(cuid())
+  phone      String?
+  email      String?
+  contact    String
+  channel    OtpChannel @default(PHONE)
+  purpose    OtpPurpose @default(LOGIN)
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([phone, createdAt])
+  @@index([contact, purpose, createdAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model DriverProfile {

@@ -2,12 +2,13 @@
 import { BottomTabBar } from "../components/customer/BottomTabBar";
 import { AppCard, SectionTitle } from "../components/ui/AppPrimitives";
 import { theme } from "../lib/theme";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 type TxStatus = "Thành công" | "Đã hủy";
 
 type TxItem = {
   id: string;
-  icon: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
   title: string;
   time: string;
   amount: string;
@@ -17,7 +18,7 @@ type TxItem = {
 const TRANSACTIONS: TxItem[] = [
   {
     id: "t1",
-    icon: "🏍",
+    icon: "motorbike",
     title: "Giao hàng siêu tốc",
     time: "Hôm nay, 14:30",
     amount: "-45.000đ",
@@ -25,7 +26,7 @@ const TRANSACTIONS: TxItem[] = [
   },
   {
     id: "t2",
-    icon: "🍴",
+    icon: "food",
     title: "Đồ ăn",
     time: "Hôm nay, 19:15",
     amount: "-120.000đ",
@@ -33,7 +34,7 @@ const TRANSACTIONS: TxItem[] = [
   },
   {
     id: "t3",
-    icon: "💳",
+    icon: "card",
     title: "Nạp tiền vào ví",
     time: "15/05/2024, 09:00",
     amount: "+500.000đ",
@@ -41,7 +42,7 @@ const TRANSACTIONS: TxItem[] = [
   },
   {
     id: "t4",
-    icon: "🚚",
+    icon: "truck",
     title: "Vận chuyển hàng hóa",
     time: "14/05/2024, 11:20",
     amount: "-350.000đ",
@@ -53,7 +54,6 @@ export default function PaymentScreen() {
   return (
     <View style={styles.page}>
       <View style={styles.header}>
-        <Text style={styles.back}>←</Text>
         <Text style={styles.headerTitle}>Lịch sử thanh toán</Text>
       </View>
 
@@ -66,7 +66,7 @@ export default function PaymentScreen() {
             return (
               <AppCard key={item.id} style={styles.card}>
                 <View style={styles.leftIconWrap}>
-                  <Text style={styles.leftIcon}>{item.icon}</Text>
+                  <MaterialCommunityIcons name={item.icon} size={20} color={theme.colors.primary} />
                 </View>
 
                 <View style={styles.mainInfo}>
@@ -108,11 +108,6 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.xxl,
     paddingBottom: theme.spacing.md
   },
-  back: {
-    color: theme.colors.textPrimary,
-    fontSize: 22,
-    width: 24
-  },
   headerTitle: {
     color: theme.colors.primaryDark,
     fontSize: 28,
@@ -135,14 +130,11 @@ const styles = StyleSheet.create({
   },
   leftIconWrap: {
     alignItems: "center",
-    backgroundColor: "#E9EEF5",
+    backgroundColor: "rgba(11, 143, 100, 0.08)",
     borderRadius: theme.radius.pill,
-    height: 36,
+    height: 38,
     justifyContent: "center",
-    width: 36
-  },
-  leftIcon: {
-    fontSize: 18
+    width: 38
   },
   mainInfo: {
     flex: 1,
@@ -193,3 +185,4 @@ const styles = StyleSheet.create({
     right: 0
   }
 });
+

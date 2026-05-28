@@ -1,6 +1,7 @@
-﻿import { Link } from "expo-router";
+import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { theme } from "../../lib/theme";
+import { Ionicons } from "@expo/vector-icons";
 
 type TabKey = "home" | "payment" | "activity" | "account";
 
@@ -10,17 +11,42 @@ type BottomTabBarProps = {
 
 type TabItem = {
   key: TabKey;
-  icon: string;
+  activeIcon: keyof typeof Ionicons.glyphMap;
+  inactiveIcon: keyof typeof Ionicons.glyphMap;
   label: string;
   href: "/customer" | "/payment" | "/activity" | "/account";
 };
 
 export function BottomTabBar({ activeTab = "home" }: BottomTabBarProps) {
   const tabs: TabItem[] = [
-    { key: "home", icon: "⌂", label: "Trang chủ", href: "/customer" },
-    { key: "payment", icon: "◉", label: "Thanh toán", href: "/payment" },
-    { key: "activity", icon: "▤", label: "Hoạt động", href: "/activity" },
-    { key: "account", icon: "◌", label: "Tài khoản", href: "/account" }
+    { 
+      key: "home", 
+      activeIcon: "home", 
+      inactiveIcon: "home-outline", 
+      label: "Trang chủ", 
+      href: "/customer" 
+    },
+    { 
+      key: "payment", 
+      activeIcon: "card", 
+      inactiveIcon: "card-outline", 
+      label: "Thanh toán", 
+      href: "/payment" 
+    },
+    { 
+      key: "activity", 
+      activeIcon: "receipt", 
+      inactiveIcon: "receipt-outline", 
+      label: "Hoạt động", 
+      href: "/activity" 
+    },
+    { 
+      key: "account", 
+      activeIcon: "person", 
+      inactiveIcon: "person-outline", 
+      label: "Tài khoản", 
+      href: "/account" 
+    }
   ];
 
   return (
@@ -30,8 +56,14 @@ export function BottomTabBar({ activeTab = "home" }: BottomTabBarProps) {
         return (
           <Link href={tab.href} asChild key={tab.key}>
             <Pressable style={styles.item}>
-              <Text style={[styles.icon, isActive && styles.active]}>{tab.icon}</Text>
-              <Text style={[styles.label, isActive && styles.active]}>{tab.label}</Text>
+              <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
+                <Ionicons 
+                  name={isActive ? tab.activeIcon : tab.inactiveIcon} 
+                  size={22} 
+                  color={isActive ? theme.colors.primary : "#64748B"} 
+                />
+              </View>
+              <Text style={[styles.label, isActive && styles.activeLabel]}>{tab.label}</Text>
             </Pressable>
           </Link>
         );
@@ -43,32 +75,48 @@ export function BottomTabBar({ activeTab = "home" }: BottomTabBarProps) {
 const styles = StyleSheet.create({
   wrap: {
     backgroundColor: "#FFFFFF",
-    borderColor: theme.colors.border,
-    borderTopLeftRadius: theme.radius.lg,
-    borderTopRightRadius: theme.radius.lg,
-    borderWidth: 1,
+    borderTopWidth: 1,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderColor: "#E2E8F0",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 0,
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing.lg
+    paddingHorizontal: theme.spacing.sm,
+    paddingTop: 10,
+    paddingBottom: 24,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 12
   },
   item: {
     alignItems: "center",
+    justifyContent: "center",
     flex: 1,
-    gap: 2
+    paddingVertical: 4
   },
-  icon: {
-    color: theme.colors.mutedIcon,
-    fontSize: 16
+  iconContainer: {
+    width: 48,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 16,
+    marginBottom: 4
+  },
+  activeIconContainer: {
+    backgroundColor: "rgba(11, 143, 100, 0.08)"
   },
   label: {
-    color: theme.colors.mutedIcon,
+    color: "#64748B",
     fontSize: 11,
     fontWeight: "600"
   },
-  active: {
-    color: theme.colors.primary
+  activeLabel: {
+    color: theme.colors.primary,
+    fontWeight: "700"
   }
 });

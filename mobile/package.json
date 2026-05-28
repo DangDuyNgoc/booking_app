@@ -10,7 +10,8 @@
     "web": "npx expo start --web"
   },
   "dependencies": {
-    "expo": "latest",
+    "@expo/vector-icons": "^15.1.1",
+    "expo": "~56.0.5",
     "expo-constants": "latest",
     "expo-linking": "latest",
     "expo-router": "latest",
@@ -24,6 +25,6 @@
   },
   "devDependencies": {
     "@types/react": "latest",
-    "typescript": "latest"
+    "typescript": "~6.0.3"
   }
 }

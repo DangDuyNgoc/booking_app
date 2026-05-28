@@ -1,25 +1,36 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { theme } from "../../lib/theme";
 import { AppCard } from "../ui/AppPrimitives";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 type ServiceCardProps = {
-  icon: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
   label: string;
   active?: boolean;
+  onPress?: () => void;
 };
 
-export function ServiceCard({ icon, label, active }: ServiceCardProps) {
+export function ServiceCard({ icon, label, active, onPress }: ServiceCardProps) {
   return (
-    <AppCard style={[styles.card, active ? styles.activeCard : styles.softCard]}>
-      <View style={[styles.iconWrap, active ? styles.iconWrapActive : styles.iconWrapSoft]}>
-        <Text style={styles.icon}>{icon}</Text>
-      </View>
-      <Text style={[styles.label, active && styles.activeLabel]}>{label}</Text>
-    </AppCard>
+    <Pressable onPress={onPress} style={styles.pressable}>
+      <AppCard style={[styles.card, active ? styles.activeCard : styles.softCard]}>
+        <View style={[styles.iconWrap, active ? styles.iconWrapActive : styles.iconWrapSoft]}>
+          <MaterialCommunityIcons 
+            name={icon} 
+            size={24} 
+            color={active ? "#FFFFFF" : theme.colors.primary} 
+          />
+        </View>
+        <Text style={[styles.label, active && styles.activeLabel]}>{label}</Text>
+      </AppCard>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  pressable: {
+    flex: 1
+  },
   card: {
     alignItems: "center",
     flex: 1,
@@ -45,10 +56,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary
   },
   iconWrapSoft: {
-    backgroundColor: "#E5F0FF"
-  },
-  icon: {
-    fontSize: 18
+    backgroundColor: "rgba(11, 143, 100, 0.08)"
   },
   label: {
     color: theme.colors.textPrimary,
@@ -59,3 +67,4 @@ const styles = StyleSheet.create({
     color: theme.colors.primaryDark
   }
 });
+

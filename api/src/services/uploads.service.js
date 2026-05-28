@@ -10,7 +10,7 @@ cloudinary.config({
 });
 
 export class UploadsService {
-  async uploadImage(file, purpose) {
+  async uploadImage(file, purpose, folderOwnerId) {
     if (!imagePurposes.includes(purpose)) {
       throw new HttpError(400, "Invalid image purpose");
     }
@@ -23,7 +23,7 @@ export class UploadsService {
       throw new HttpError(400, "Only image files are allowed");
     }
 
-    const result = await this.uploadBuffer(file.buffer, purposeFolders[purpose]);
+    const result = await this.uploadBuffer(file.buffer, this.resolveFolder(purpose, folderOwnerId));
 
     return {
       purpose,
@@ -33,6 +33,24 @@ export class UploadsService {
       height: result.height,
       format: result.format
     };
+  }
+
+  resolveFolder(purpose, folderOwnerId) {
+    const folder = purposeFolders[purpose];
+
+    if (!folder) {
+      throw new HttpError(400, "Invalid image purpose");
+    }
+
+    if (!folder.userScopedFolder) {
+      return folder.baseFolder;
+    }
+
+    if (!folderOwnerId) {
+      throw new HttpError(400, "folderOwnerId is required for this image purpose");
+    }
+
+    return `${folder.baseFolder}/${folderOwnerId}/${folder.userScopedFolder}`;
   }
 
   uploadBuffer(buffer, folder) {
@@ -53,6 +71,16 @@ export class UploadsService {
       );
 
       stream.end(buffer);
+    });
+  }
+
+  deleteImage(publicId) {
+    if (!publicId) {
+      return Promise.resolve();
+    }
+
+    return cloudinary.uploader.destroy(publicId, {
+      resource_type: "image"
     });
   }
 }

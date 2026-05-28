@@ -11,7 +11,7 @@ import { EmailService } from "./email.service.js";
 import { SmsService } from "./sms.service.js";
 
 const allowedSelfRegisterRoles = new Set(["CUSTOMER", "DRIVER"]);
-const otpPurposes = new Set(["REGISTER", "LOGIN", "RESET_PASSWORD"]);
+const otpPurposes = new Set(["REGISTER", "LOGIN", "RESET_PASSWORD", "VERIFY_CONTACT"]);
 
 export class AuthService {
   constructor({

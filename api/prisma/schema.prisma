@@ -21,6 +21,7 @@ enum OtpPurpose {
   REGISTER
   LOGIN
   RESET_PASSWORD
+  VERIFY_CONTACT
 }
 
 enum DriverVerificationStatus {
@@ -83,6 +84,7 @@ model User {
   passwordHash  String?
   fullName      String?
   avatarUrl     String?
+  avatarPublicId String?
   role          UserRole       @default(CUSTOMER)
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
@@ -131,9 +133,23 @@ model DriverProfile {
   user               User                      @relation(fields: [userId], references: [id])
   verificationStatus DriverVerificationStatus  @default(PENDING)
   availabilityStatus DriverAvailabilityStatus  @default(OFFLINE)
+  portraitUrl        String?
+  portraitPublicId   String?
   idCardFrontUrl     String?
+  idCardFrontPublicId String?
   idCardBackUrl      String?
+  idCardBackPublicId String?
   driverLicenseUrl   String?
+  judicialRecordUrl  String?
+  judicialRecordPublicId String?
+  vehicleRegistrationUrl String?
+  vehicleRegistrationPublicId String?
+  vehicleInsuranceUrl String?
+  vehicleInsurancePublicId String?
+  healthCertificateUrl String?
+  healthCertificatePublicId String?
+  vehicleWithPlateUrl String?
+  vehicleWithPlatePublicId String?
   rejectionReason    String?
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
@@ -153,6 +169,7 @@ model Vehicle {
   model           String?
   maxWeightKg     Int?
   imageUrl        String?
+  imagePublicId   String?
   isActive        Boolean       @default(true)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

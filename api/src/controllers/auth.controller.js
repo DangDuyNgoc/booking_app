@@ -47,8 +47,9 @@ export async function forgotPassword(req, res, next) {
 
 export async function resetPassword(req, res, next) {
   try {
-    res.status(201).json({
-      message: "Password reset successfully."
+    res.json({
+      message: "Password reset successfully.",
+      data: await authService.resetPassword(req.body)
     });
   } catch (error) {
     next(error);

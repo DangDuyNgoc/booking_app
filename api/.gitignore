@@ -11,4 +11,6 @@ coverage/
 prisma/generated/
 *.log
 
-docs
+docs/
+
+tests/

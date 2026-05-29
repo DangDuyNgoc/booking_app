@@ -1,7 +1,14 @@
 import { Router } from "express";
 import multer from "multer";
-import { submitMyVerification } from "../controllers/drivers.controller.js";
-import { requireAuth } from "../middleware/auth.middleware.js";
+import {
+  approveVerification,
+  getMyVerification,
+  getVerificationById,
+  listVerifications,
+  rejectVerification,
+  submitMyVerification
+} from "../controllers/drivers.controller.js";
+import { requireAuth, requireRole } from "../middleware/auth.middleware.js";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -25,7 +32,13 @@ export function createDriversRoutes() {
   const router = Router();
 
   router.use(requireAuth);
+  router.get("/verification", getMyVerification);
   router.post("/verification", upload.fields(verificationFields), submitMyVerification);
+  
+  router.get("/admin/verifications", requireRole("ADMIN"), listVerifications);
+  router.get("/admin/verifications/:id", requireRole("ADMIN"), getVerificationById);
+  router.patch("/admin/verifications/:id/approve", requireRole("ADMIN"), approveVerification);
+  router.patch("/admin/verifications/:id/reject", requireRole("ADMIN"), rejectVerification);
 
   return router;
 }

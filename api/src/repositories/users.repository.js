@@ -25,6 +25,41 @@ export class UsersRepository {
     });
   }
 
+  async findMany({ page = 1, limit = 20, role, isActive, q } = {}) {
+    const where = {
+      ...(role ? { role } : {}),
+      ...(typeof isActive === "boolean" ? { isActive } : {}),
+      ...(q
+        ? {
+            OR: [
+              { email: { contains: q, mode: "insensitive" } },
+              { phone: { contains: q } },
+              { fullName: { contains: q, mode: "insensitive" } }
+            ]
+          }
+        : {})
+    };
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" }
+      }),
+      prisma.user.count({ where })
+    ]);
+
+    return { items, total, page, limit };
+  }
+
+  update(id, data) {
+    return prisma.user.update({
+      where: { id },
+      data
+    });
+  }
+
   updatePassword(id, passwordHash) {
     return prisma.user.update({
       where: { id },

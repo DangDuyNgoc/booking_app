@@ -1,4 +1,6 @@
-﻿import { ScrollView, StyleSheet, Text, View } from "react-native";
+﻿import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { BottomTabBar } from "../components/customer/BottomTabBar";
 import { AppCard } from "../components/ui/AppPrimitives";
 import { theme } from "../lib/theme";
@@ -20,7 +22,9 @@ export default function DriverVehicleProfileScreen() {
   return (
     <View style={styles.page}>
       <View style={styles.header}>
-        <Text style={styles.back}>←</Text>
+        <Pressable onPress={() => router.back()} hitSlop={15}>
+          <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} />
+        </Pressable>
         <Text style={styles.title}>Hồ sơ của tôi</Text>
         <Text style={styles.bell}>◔</Text>
       </View>
@@ -79,7 +83,6 @@ export default function DriverVehicleProfileScreen() {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", paddingTop: theme.spacing.xxl, paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md, borderBottomWidth: 1, borderBottomColor: "#DEE6F2" },
-  back: { width: 24, color: theme.colors.textPrimary, fontSize: 20 },
   title: { flex: 1, color: theme.colors.textPrimary, fontSize: 30, fontWeight: "800" },
   bell: { color: theme.colors.textPrimary },
   content: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.md, paddingBottom: 140 },

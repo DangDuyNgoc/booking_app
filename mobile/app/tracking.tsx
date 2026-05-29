@@ -1,16 +1,11 @@
 ﻿import { useState, useEffect } from "react";
 import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View, TextInput } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { AppCard, SectionTitle } from "../components/ui/AppPrimitives";
+import { AppCard } from "../components/ui/AppPrimitives";
 import { theme } from "../lib/theme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
-type BookingState = 
-  | "input" 
-  | "payment_select" 
-  | "promo_select" 
-  | "all_services"
-  | "searching" 
+type TrackingState = 
   | "arriving" 
   | "delivering" 
   | "chat" 
@@ -18,71 +13,33 @@ type BookingState =
   | "rating" 
   | "rating_success";
 
-const SERVICES = [
-  { id: "moto_saving", name: "Ship Tiết Kiệm", basePrice: 27000, eta: "Giao trong 30-45 phút", icon: "motorbike" as const, type: "moto", tag: "NHANH" },
-  { id: "moto_express", name: "Ship Siêu Tốc", basePrice: 35000, eta: "Giao trong 15-20 phút", icon: "motorbike" as const, type: "moto", tag: "SIÊU TỐC" },
-  { id: "bagac", name: "Xe Ba Gác", basePrice: 95000, eta: "Giao hàng tầm trung", icon: "truck" as const, type: "truck", tag: "TIỆN LỢI" },
-  { id: "truck_500", name: "Xe Tải 500kg", basePrice: 155000, eta: "Giao hàng cồng kềnh", icon: "truck" as const, type: "truck" },
-  { id: "truck_1000", name: "Xe Tải 1000kg", basePrice: 255000, eta: "Chuyển nhà, hàng lớn", icon: "truck" as const, type: "truck" }
-];
+const SERVICES = {
+  moto: { id: "moto_express", name: "Ship Siêu Tốc", icon: "motorbike" as const },
+  truck: { id: "truck_500", name: "Xe Tải 500kg", icon: "truck" as const }
+};
 
-export default function BookingScreen() {
-  const { state } = useLocalSearchParams<{ state?: string }>();
-  const [bookingState, setBookingState] = useState<BookingState>("input");
-  const [previousState, setPreviousState] = useState<BookingState>("arriving");
-  const [progress, setProgress] = useState(0.4);
+export default function TrackingScreen() {
+  const { state, type } = useLocalSearchParams<{ state?: string; type?: string }>();
+  const [bookingState, setBookingState] = useState<TrackingState>("arriving");
+  const [previousState, setPreviousState] = useState<TrackingState>("arriving");
   const [callConnected, setCallConnected] = useState(false);
   const [callSeconds, setCallSeconds] = useState(0);
   const [ratingStars, setRatingStars] = useState(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedTip, setSelectedTip] = useState<number | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
-  const [selectedVoucher, setSelectedVoucher] = useState<{code: string; discount: number; label: string} | null>({
-    code: "GIAM5K",
-    discount: 5000,
-    label: "-5.000đ từ Voucher"
-  });
-  const [currentServiceId, setCurrentServiceId] = useState("moto_saving");
 
-  const currentService = SERVICES.find(s => s.id === currentServiceId) || SERVICES[0];
-  const isMotoActive = currentService.type === "moto";
-  const isTruckActive = currentService.type === "truck";
-
-  const activeMotoService = SERVICES.find(s => s.type === "moto" && s.id === currentServiceId) || SERVICES[0];
-  const activeTruckService = SERVICES.find(s => s.type === "truck" && s.id === currentServiceId) || SERVICES[3];
-
-  const basePrice = currentService.basePrice;
-  const discount = selectedVoucher ? selectedVoucher.discount : 0;
-  const totalPrice = Math.max(0, basePrice - discount);
+  // Determine current service (moto or truck)
+  const currentService = type === "truck" ? SERVICES.truck : SERVICES.moto;
 
   useEffect(() => {
     if (state === "arriving") {
       setBookingState("arriving");
+      setPreviousState("arriving");
     } else if (state === "delivering") {
       setBookingState("delivering");
+      setPreviousState("delivering");
     }
   }, [state]);
-
-  useEffect(() => {
-    if (bookingState === "searching") {
-      setProgress(0.1);
-      const progressTimer = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 1) return 0.1;
-          return prev + 0.05;
-        });
-      }, 150);
-
-      const searchTimer = setTimeout(() => {
-        setBookingState("arriving");
-      }, 4000);
-
-      return () => {
-        clearInterval(progressTimer);
-        clearTimeout(searchTimer);
-      };
-    }
-  }, [bookingState]);
 
   useEffect(() => {
     if (bookingState === "call") {
@@ -117,75 +74,13 @@ export default function BookingScreen() {
     return `${pad(mins)}:${pad(remainingSecs)}`;
   };
 
-  // State: SEARCHING FOR DRIVER
-  if (bookingState === "searching") {
-    return (
-      <View style={styles.page}>
-        {/* Searching Header */}
-        <View style={styles.searchHeader}>
-          <Pressable onPress={() => setBookingState("input")} hitSlop={15}>
-            <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} style={styles.searchBack as any} />
-          </Pressable>
-          <Text style={styles.searchTitle}>Searching for Driver</Text>
-          <View style={styles.helpCircle}>
-            <Ionicons name="help-circle-outline" size={20} color={theme.colors.textPrimary} />
-          </View>
-        </View>
-
-        {/* Map Background */}
-        <ImageBackground
-          source={require("../assets/map_bg.png")}
-          style={styles.searchMap}
-          resizeMode="cover"
-        >
-          {/* Pulsing center marker */}
-          <View style={styles.pulseOuter}>
-            <View style={styles.pulseMiddle}>
-              <View style={styles.pulseInner}>
-                <View style={styles.pulseDot} />
-              </View>
-            </View>
-          </View>
-        </ImageBackground>
-
-        {/* Bottom Sheet */}
-        <View style={styles.bottomSheet}>
-          <View style={styles.sheetHandle} />
-          
-          <Text style={styles.sheetTitle}>Đang tìm tài xế cho bạn...</Text>
-          
-          {/* Progress Bar */}
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
-          </View>
-
-          {/* Pickup address info */}
-          <View style={styles.sheetAddressBox}>
-            <View style={styles.addressIconWrap}>
-              <View style={styles.addressIconDot} />
-            </View>
-            <View style={styles.sheetAddressTextWrap}>
-              <Text style={styles.sheetAddressLabel}>ĐIỂM ĐÓN</Text>
-              <Text style={styles.sheetAddressValue}>430 Điện Biên Phủ, Phường 25</Text>
-            </View>
-          </View>
-
-          {/* Cancel button */}
-          <Pressable style={styles.cancelBtn} onPress={() => setBookingState("input")}>
-            <Text style={styles.cancelBtnText}>Hủy yêu cầu</Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
   // State: DRIVER ARRIVING (Tài xế đang đến)
   if (bookingState === "arriving") {
     return (
       <View style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => setBookingState("input")} hitSlop={15}>
+          <Pressable onPress={() => router.push("/activity")} hitSlop={15}>
             <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} />
           </Pressable>
           <Text style={styles.logo}>ShipLogistics</Text>
@@ -314,7 +209,7 @@ export default function BookingScreen() {
       <View style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => setBookingState("arriving")} hitSlop={15}>
+          <Pressable onPress={() => router.push("/activity")} hitSlop={15}>
             <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} />
           </Pressable>
           <Text style={styles.logo}>ShipLogistics</Text>
@@ -428,7 +323,7 @@ export default function BookingScreen() {
         <View style={styles.chatHeader}>
           <View style={styles.chatHeaderLeft}>
             <Pressable onPress={() => setBookingState(previousState)} hitSlop={15}>
-              <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} style={styles.chatBack as any} />
+              <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} style={styles.chatBackIcon} />
             </Pressable>
             <View style={styles.chatAvatarContainer}>
               <Image
@@ -556,7 +451,7 @@ export default function BookingScreen() {
         {/* Call Header */}
         <View style={styles.callHeader}>
           <Pressable onPress={() => setBookingState(previousState === "chat" ? "arriving" : previousState)} hitSlop={15}>
-            <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} style={styles.callHeaderBack as any} />
+            <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} style={styles.callHeaderBackIcon} />
           </Pressable>
           <Text style={styles.callHeaderLogo}>ShipLogistics</Text>
           <View style={[styles.callingBadge, !callConnected && { backgroundColor: "#FEF3C7" }]}>
@@ -646,7 +541,7 @@ export default function BookingScreen() {
       <View style={styles.page}>
         {/* Rating Header */}
         <View style={styles.ratingHeader}>
-          <Pressable onPress={() => setBookingState("input")} hitSlop={15}>
+          <Pressable onPress={() => router.push("/activity")} hitSlop={15}>
             <Ionicons name="close" size={24} color={theme.colors.textPrimary} style={styles.ratingCloseIcon} />
           </Pressable>
           <Text style={styles.ratingHeaderTitle}>Đánh giá</Text>
@@ -655,7 +550,7 @@ export default function BookingScreen() {
 
         {/* Rating Body */}
         <ScrollView contentContainerStyle={styles.ratingBodyContainer} showsVerticalScrollIndicator={false}>
-          {/* Driver profile avatar with green border and verified badge */}
+          {/* Driver profile avatar with verified badge */}
           <View style={styles.ratingAvatarWrapper}>
             <View style={styles.ratingAvatarBorder}>
               <Image
@@ -748,7 +643,7 @@ export default function BookingScreen() {
       <View style={[styles.page, { backgroundColor: "#FFF" }]}>
         {/* Success Header */}
         <View style={styles.successHeader}>
-          <Pressable onPress={() => setBookingState("input")} hitSlop={15}>
+          <Pressable onPress={() => router.push("/customer")} hitSlop={15}>
             <Ionicons name="close" size={24} color={theme.colors.textPrimary} style={styles.successCloseIcon} />
           </Pressable>
           <Text style={styles.successHeaderTitle}>Rating Submitted</Text>
@@ -778,11 +673,7 @@ export default function BookingScreen() {
           <Pressable 
             style={styles.successHomeBtn}
             onPress={() => {
-              // Reset values & go home
-              setRatingStars(0);
-              setSelectedTags([]);
-              setSelectedTip(null);
-              setBookingState("input");
+              router.push("/customer");
             }}
           >
             <Text style={styles.successHomeBtnText}>Quay về Trang chủ</Text>
@@ -791,11 +682,6 @@ export default function BookingScreen() {
           <Pressable 
             style={styles.successHistoryBtn}
             onPress={() => {
-              // Go to Activity history page
-              setRatingStars(0);
-              setSelectedTags([]);
-              setSelectedTip(null);
-              setBookingState("input"); // Reset state
               router.push("/activity?tab=history");
             }}
           >
@@ -806,306 +692,7 @@ export default function BookingScreen() {
     );
   }
 
-  // State: PAYMENT SELECT (Phương thức thanh toán)
-  if (bookingState === "payment_select") {
-    const paymentMethods = [
-      { id: "cash", label: "Tiền mặt", icon: "cash-outline", desc: "Thanh toán bằng tiền mặt khi nhận hàng" },
-      { id: "card", label: "Thẻ tín dụng / Visa", icon: "card-outline", desc: "Thẻ Visa, Mastercard, JCB" },
-      { id: "momo", label: "Ví MoMo", icon: "wallet-outline", desc: "Liên kết ví MoMo điện tử" },
-      { id: "zalopay", label: "Ví ZaloPay", icon: "wallet-outline", desc: "Ví ZaloPay điện tử" }
-    ];
-
-    return (
-      <View style={styles.page}>
-        <View style={styles.header}>
-          <Pressable onPress={() => setBookingState("input")} hitSlop={15}>
-            <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} />
-          </Pressable>
-          <Text style={styles.logo}>Thanh toán</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <ScrollView contentContainerStyle={styles.selectContent}>
-          {paymentMethods.map((method) => {
-            const isSelected = paymentMethod === method.label;
-            return (
-              <Pressable
-                key={method.id}
-                style={[styles.selectCard, isSelected && styles.selectCardActive]}
-                onPress={() => {
-                  setPaymentMethod(method.label);
-                  setBookingState("input");
-                }}
-              >
-                <View style={[styles.selectIconWrap, isSelected && styles.selectIconWrapActive]}>
-                  <Ionicons 
-                    name={method.icon as any} 
-                    size={24} 
-                    color={isSelected ? "#FFFFFF" : theme.colors.primary} 
-                  />
-                </View>
-                <View style={styles.selectTextWrap}>
-                  <Text style={styles.selectMethodLabel}>{method.label}</Text>
-                  <Text style={styles.selectMethodDesc}>{method.desc}</Text>
-                </View>
-                {isSelected && (
-                  <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} />
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // State: PROMO SELECT (Chọn khuyến mãi)
-  if (bookingState === "promo_select") {
-    const vouchers = [
-      { code: "GIAM5K", discount: 5000, label: "-5.000đ từ Voucher", desc: "Giảm 5.000đ cho mọi đơn giao tiết kiệm" },
-      { code: "SHIPFREE", discount: 15000, label: "-15.000đ từ Voucher", desc: "Miễn phí vận chuyển tối đa 15.000đ" },
-      { code: "GIAOQUAYNHANH", discount: 10000, label: "-10.000đ từ Voucher", desc: "Ưu đãi giao hàng siêu tốc giảm 10.000đ" }
-    ];
-
-    return (
-      <View style={styles.page}>
-        <View style={styles.header}>
-          <Pressable onPress={() => setBookingState("input")} hitSlop={15}>
-            <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} />
-          </Pressable>
-          <Text style={styles.logo}>Chọn khuyến mãi</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <ScrollView contentContainerStyle={styles.selectContent}>
-          <View style={styles.promoInputCard}>
-            <TextInput 
-              placeholder="Nhập mã khuyến mãi..." 
-              placeholderTextColor="#8A99AF"
-              style={styles.promoInput} 
-            />
-            <Pressable style={styles.applyBtn}>
-              <Text style={styles.applyBtnText}>Áp dụng</Text>
-            </Pressable>
-          </View>
-
-          <Text style={styles.promoSectionTitle}>Voucher khả dụng</Text>
-
-          {vouchers.map((v) => {
-            const isSelected = selectedVoucher?.code === v.code;
-            return (
-              <Pressable
-                key={v.code}
-                style={[styles.selectCard, isSelected && styles.selectCardActive]}
-                onPress={() => {
-                  if (isSelected) {
-                    setSelectedVoucher(null);
-                  } else {
-                    setSelectedVoucher(v);
-                  }
-                  setBookingState("input");
-                }}
-              >
-                <View style={[styles.selectIconWrap, isSelected && styles.selectIconWrapActive]}>
-                  <Ionicons 
-                    name="gift-outline" 
-                    size={24} 
-                    color={isSelected ? "#FFFFFF" : theme.colors.primary} 
-                  />
-                </View>
-                <View style={styles.selectTextWrap}>
-                  <Text style={styles.selectMethodLabel}>{v.code}</Text>
-                  <Text style={styles.selectMethodDesc}>{v.desc}</Text>
-                </View>
-                {isSelected && (
-                  <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} />
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // State: ALL SERVICES (Xem tất cả dịch vụ)
-  if (bookingState === "all_services") {
-    return (
-      <View style={styles.page}>
-        <View style={styles.header}>
-          <Pressable onPress={() => setBookingState("input")} hitSlop={15}>
-            <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} />
-          </Pressable>
-          <Text style={styles.logo}>Dịch vụ vận chuyển</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <ScrollView contentContainerStyle={styles.selectContent}>
-          {SERVICES.map((s) => {
-            const isSelected = currentServiceId === s.id;
-            return (
-              <Pressable
-                key={s.id}
-                style={[styles.selectCard, isSelected && styles.selectCardActive]}
-                onPress={() => {
-                  setCurrentServiceId(s.id);
-                  setBookingState("input");
-                }}
-              >
-                <View style={[styles.selectIconWrap, isSelected && styles.selectIconWrapActive]}>
-                  <MaterialCommunityIcons 
-                    name={s.icon} 
-                    size={24} 
-                    color={isSelected ? "#FFFFFF" : theme.colors.primary} 
-                  />
-                </View>
-                <View style={styles.selectTextWrap}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <Text style={styles.selectMethodLabel}>{s.name}</Text>
-                    {s.tag && (
-                      <View style={styles.selectServiceTagPill}>
-                        <Text style={styles.selectServiceTagText}>{s.tag}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.selectMethodDesc}>{s.eta}</Text>
-                </View>
-                <View style={{ alignItems: "flex-end", justifyContent: "center" }}>
-                  <Text style={styles.selectServicePrice}>
-                  {(s.basePrice - (selectedVoucher ? selectedVoucher.discount : 0)).toLocaleString("vi-VN")}đ
-                  </Text>
-                  {isSelected && (
-                    <Ionicons name="checkmark-circle" size={20} color={theme.colors.primary} style={{ marginTop: 4 }} />
-                  )}
-                </View>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // State: INPUT (Normal booking details)
-  return (
-    <View style={styles.page}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={15}>
-          <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} />
-        </Pressable>
-        <Text style={styles.logo}>ShipLogistics</Text>
-        <Ionicons name="notifications-outline" size={24} color={theme.colors.textPrimary} style={styles.bell as any} />
-      </View>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.locationPill}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons name="locate-outline" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
-            <Text style={styles.locationText}>Vị trí hiện tại: Quận 1, TP. Hồ Chí Minh</Text>
-          </View>
-        </View>
-
-        <ImageBackground 
-          source={require("../assets/map_bg.png")} 
-          style={styles.mapSpace}
-          imageStyle={{ borderRadius: theme.radius.md }}
-        />
-
-        <AppCard style={styles.addressCard}>
-          <View style={styles.addressRow}>
-            <Text style={[styles.dot, styles.pickupDot]}>○</Text>
-            <View style={styles.addressBox}>
-              <Text style={styles.addressLabel}>Điểm nhận hàng</Text>
-              <Text style={styles.addressValue}>430 Điện Biên Phủ, Phường 25</Text>
-            </View>
-          </View>
-
-          <View style={styles.addressRow}>
-            <Text style={[styles.dot, styles.dropoffDot]}>○</Text>
-            <View style={styles.addressBox}>
-              <Text style={styles.addressLabel}>Điểm giao hàng</Text>
-              <Text style={styles.addressPlaceholder}>Nhập địa chỉ giao hàng...</Text>
-            </View>
-          </View>
-        </AppCard>
-
-        <View style={styles.sectionRow}>
-          <SectionTitle>Chọn dịch vụ</SectionTitle>
-          <Pressable onPress={() => setBookingState("all_services")}>
-            <Text style={styles.seeAll}>Xem tất cả</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.serviceGrid}>
-          <Pressable style={{ flex: 1 }} onPress={() => setCurrentServiceId(activeMotoService.id)}>
-            <AppCard style={[styles.serviceCard, isMotoActive && styles.serviceActive]}>
-              <View style={isMotoActive ? styles.serviceIconWrap : styles.serviceIconWrapSoft}>
-                <MaterialCommunityIcons name="motorbike" size={26} color={theme.colors.primary} />
-              </View>
-              {activeMotoService.tag && <Text style={styles.serviceTag}>{activeMotoService.tag}</Text>}
-              <Text style={styles.serviceName}>{activeMotoService.name}</Text>
-              <Text style={styles.servicePrice}>
-                {(activeMotoService.basePrice - (selectedVoucher ? selectedVoucher.discount : 0)).toLocaleString("vi-VN")}đ
-              </Text>
-              <Text style={styles.serviceEta}>{activeMotoService.eta}</Text>
-            </AppCard>
-          </Pressable>
-
-          <Pressable style={{ flex: 1 }} onPress={() => setCurrentServiceId(activeTruckService.id)}>
-            <AppCard style={[styles.serviceCard, isTruckActive && styles.serviceActive]}>
-              <View style={isTruckActive ? styles.serviceIconWrap : styles.serviceIconWrapSoft}>
-                <MaterialCommunityIcons name="truck" size={26} color={theme.colors.primary} />
-              </View>
-              {activeTruckService.tag && <Text style={styles.serviceTag}>{activeTruckService.tag}</Text>}
-              <Text style={styles.serviceName}>{activeTruckService.name}</Text>
-              <Text style={styles.servicePrice}>
-                {(activeTruckService.basePrice - (selectedVoucher ? selectedVoucher.discount : 0)).toLocaleString("vi-VN")}đ
-              </Text>
-              <Text style={styles.serviceEta}>{activeTruckService.eta}</Text>
-            </AppCard>
-          </Pressable>
-        </View>
-
-        <View style={styles.miniRow}>
-          <Pressable style={{ flex: 1 }} onPress={() => setBookingState("payment_select")}>
-            <AppCard style={styles.miniCard}>
-              <Text style={styles.miniTitle}>Thanh toán</Text>
-              <Text style={styles.miniValue}>{paymentMethod}</Text>
-            </AppCard>
-          </Pressable>
-          <Pressable style={{ flex: 1 }} onPress={() => setBookingState("promo_select")}>
-            <AppCard style={styles.miniCard}>
-              <Text style={styles.miniTitle}>Khuyến mãi</Text>
-              <Text style={styles.miniValue}>{selectedVoucher ? selectedVoucher.code : "Chọn ưu đãi"}</Text>
-            </AppCard>
-          </Pressable>
-        </View>
-      </ScrollView>
-
-      <View style={styles.checkoutBar}>
-        <View>
-          <Text style={styles.totalLabel}>Tổng cước</Text>
-          <Text style={styles.totalValue}>
-            {totalPrice.toLocaleString("vi-VN")}{" "}
-            <Text style={styles.vnd}>VND</Text>
-          </Text>
-        </View>
-        {selectedVoucher ? (
-          <View style={styles.voucherWrap}>
-            <Text style={styles.voucher}>{selectedVoucher.label}</Text>
-            <Text style={styles.beforeVoucher}>{basePrice.toLocaleString("vi-VN")}đ</Text>
-          </View>
-        ) : (
-          <View style={styles.voucherWrap}>
-            <Text style={[styles.voucher, { color: "#64748B" }]}>Chưa áp dụng voucher</Text>
-          </View>
-        )}
-        <Pressable style={styles.submitBtn} onPress={() => setBookingState("searching")}>
-          <Text style={styles.submitText}>Đặt Giao Hàng Ngay →</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
+  return null;
 }
 
 // Special wrapper style for flex-direction row on order banner left to avoid nesting conflicts
@@ -1130,163 +717,12 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E4EAF4",
     borderBottomWidth: 1
   },
-  back: { color: theme.colors.primaryDark, fontSize: 22 },
   logo: { color: theme.colors.primaryDark, fontSize: 26, fontWeight: "800" },
-  bell: { color: theme.colors.primaryDark, fontSize: 20 },
-  content: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: 190
-  },
-  locationPill: {
-    backgroundColor: "#F4F7FB",
-    borderRadius: theme.radius.pill,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    marginBottom: theme.spacing.md
-  },
-  locationText: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: "600" },
-  mapSpace: {
-    height: 86,
-    borderRadius: theme.radius.md,
-    backgroundColor: "#E6ECE3",
-    marginBottom: theme.spacing.md
-  },
-  addressCard: { gap: theme.spacing.sm },
-  addressRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
-  dot: { fontSize: 18, width: 20, textAlign: "center" },
-  pickupDot: { color: theme.colors.primary },
-  dropoffDot: { color: "#B45309" },
-  addressBox: {
-    flex: 1,
-    backgroundColor: "#EAF0F8",
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm
-  },
-  addressLabel: { color: theme.colors.textSecondary, fontSize: 11 },
-  addressValue: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: "600", marginTop: 2 },
-  addressPlaceholder: { color: "#7D8EA7", fontSize: 13, marginTop: 2 },
-  sectionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: theme.spacing.lg
-  },
-  seeAll: { color: theme.colors.primaryDark, fontWeight: "700", fontSize: 13 },
-  serviceGrid: { flexDirection: "row", gap: theme.spacing.sm, marginTop: theme.spacing.sm },
-  serviceCard: { flex: 1, minHeight: 140 },
-  serviceActive: { backgroundColor: "#DFF4EB", borderColor: theme.colors.primary },
-  serviceIcon: { fontSize: 18 },
-  serviceTag: {
-    alignSelf: "flex-start",
-    marginTop: theme.spacing.xs,
-    backgroundColor: theme.colors.primary,
-    color: "#FFF",
-    borderRadius: theme.radius.pill,
-    fontSize: 9,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    overflow: "hidden"
-  },
-  serviceName: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: "700", marginTop: theme.spacing.sm },
-  servicePrice: { color: theme.colors.primaryDark, fontSize: 22, fontWeight: "800", marginTop: 2 },
-  serviceEta: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 2 },
-  miniRow: { flexDirection: "row", gap: theme.spacing.sm, marginTop: theme.spacing.md },
-  miniCard: { flex: 1 },
-  miniTitle: { color: theme.colors.textSecondary, fontSize: 11 },
-  miniValue: { color: theme.colors.textPrimary, fontWeight: "700", marginTop: 3 },
-  checkoutBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing.lg
-  },
-  totalLabel: { color: theme.colors.textSecondary, fontSize: 12 },
-  totalValue: { color: theme.colors.textPrimary, fontSize: 42, fontWeight: "900" },
-  vnd: { fontSize: 12, fontWeight: "700" },
-  voucherWrap: { position: "absolute", right: theme.spacing.lg, top: theme.spacing.sm, alignItems: "flex-end" },
-  voucher: { color: theme.colors.primary, fontSize: 11, fontWeight: "700" },
-  beforeVoucher: { color: theme.colors.textSecondary, fontSize: 10, textDecorationLine: "line-through" },
-  submitBtn: {
-    marginTop: theme.spacing.sm,
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.pill,
-    minHeight: 48,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  submitText: { color: "#FFF", fontWeight: "700", fontSize: 15 },
-
-  // Searching State Styles
-  searchHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: theme.spacing.xxl,
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
-    backgroundColor: "#FFF",
-    borderBottomColor: "#E4EAF4",
-    borderBottomWidth: 1
-  },
-  searchBack: { color: theme.colors.primaryDark, fontSize: 22 },
-  searchTitle: { color: theme.colors.primaryDark, fontSize: 16, fontWeight: "700" },
-  helpCircle: {
-    borderColor: theme.colors.primaryDark,
-    borderWidth: 1.5,
-    borderRadius: 999,
-    width: 20,
-    height: 20,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  helpText: { color: theme.colors.primaryDark, fontSize: 12, fontWeight: "700" },
   searchMap: {
     flex: 1,
     width: "100%",
     alignItems: "center",
     justifyContent: "center"
-  },
-  pulseOuter: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "rgba(11, 143, 100, 0.15)",
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  pulseMiddle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "rgba(11, 143, 100, 0.25)",
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  pulseInner: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#0B8F64",
-    borderWidth: 3,
-    borderColor: "#FFF",
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  pulseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#FFF"
   },
   bottomSheet: {
     position: "absolute",
@@ -1314,77 +750,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: theme.spacing.lg
   },
-  sheetTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "center"
-  },
-  progressBarBg: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#E2E8F0",
-    marginVertical: theme.spacing.md,
-    overflow: "hidden"
-  },
-  progressBarFill: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.colors.primary
-  },
-  sheetAddressBox: {
-    backgroundColor: "#F0F4FC",
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: theme.spacing.md
-  },
-  addressIconWrap: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: theme.spacing.md
-  },
-  addressIconDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: theme.colors.primary
-  },
-  sheetAddressTextWrap: {
-    flex: 1
-  },
-  sheetAddressLabel: {
-    color: theme.colors.textSecondary,
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.5
-  },
-  sheetAddressValue: {
-    color: theme.colors.textPrimary,
-    fontSize: 13,
-    fontWeight: "600",
-    marginTop: 2
-  },
-  cancelBtn: {
-    backgroundColor: "#EBF2FC",
-    borderRadius: theme.radius.pill,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  cancelBtnText: {
-    color: "#475569",
-    fontSize: 15,
-    fontWeight: "700"
-  },
-
-  // Driver Arriving & Delivering styles
   floatingBanner: {
     position: "absolute",
     top: theme.spacing.md,
@@ -1408,9 +773,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing.sm
-  },
-  bannerIcon: {
-    fontSize: 16
   },
   bannerText: {
     color: "#FFF",
@@ -1460,18 +822,12 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4
   },
-  vehicleEmoji: {
-    fontSize: 16
-  },
   destinationPin: {
     position: "absolute",
     width: 32,
     height: 32,
     alignItems: "center",
     justifyContent: "center"
-  },
-  destinationPinText: {
-    fontSize: 22
   },
   driverProfileRow: {
     flexDirection: "row",
@@ -1499,11 +855,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#FFF"
-  },
-  verifiedText: {
-    color: "#FFF",
-    fontSize: 9,
-    fontWeight: "bold"
   },
   driverNameWrap: {
     flex: 1
@@ -1561,9 +912,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: theme.spacing.md
   },
-  orderBannerIcon: {
-    fontSize: 22
-  },
   orderBannerTitle: {
     color: theme.colors.textSecondary,
     fontSize: 10,
@@ -1574,11 +922,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     marginTop: 2
-  },
-  orderChevron: {
-    color: theme.colors.textSecondary,
-    fontSize: 13,
-    fontWeight: "700"
   },
 
   // Delivering Screen Styles
@@ -1703,9 +1046,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: theme.spacing.sm
   },
-  chatBack: {
-    color: theme.colors.primaryDark,
-    fontSize: 22,
+  chatBackIcon: {
     marginRight: 4
   },
   chatAvatarContainer: {
@@ -1868,11 +1209,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
-  plusBtnText: {
-    color: "#0B8F64",
-    fontSize: 20,
-    fontWeight: "700"
-  },
   inputBubble: {
     flex: 1,
     backgroundColor: "#F0F4FC",
@@ -1894,11 +1230,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
-  sendBtnIcon: {
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "bold"
-  },
 
   // CALL SCREEN STYLES
   callHeader: {
@@ -1910,7 +1241,7 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.md,
     backgroundColor: "#F2F5FB"
   },
-  callHeaderBack: {
+  callHeaderBackIcon: {
     color: theme.colors.primaryDark,
     fontSize: 22
   },
@@ -2044,9 +1375,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3
   },
-  controlIcon: {
-    fontSize: 20
-  },
   controlLabel: {
     color: theme.colors.textSecondary,
     fontSize: 11,
@@ -2079,11 +1407,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     transform: [{ rotate: "135deg" }]
-  },
-  endCallPhoneIcon: {
-    color: "#FFF",
-    fontSize: 10,
-    fontWeight: "bold"
   },
   endCallText: {
     color: "#FFF",
@@ -2149,11 +1472,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#FFF"
   },
-  ratingVerifiedText: {
-    color: "#FFF",
-    fontSize: 9,
-    fontWeight: "bold"
-  },
   ratingDriverName: {
     color: theme.colors.textPrimary,
     fontSize: 20,
@@ -2184,13 +1502,6 @@ const styles = StyleSheet.create({
   starsRow: {
     flexDirection: "row",
     gap: 12
-  },
-  starIcon: {
-    fontSize: 32,
-    color: "#CBD5E1"
-  },
-  starActive: {
-    color: "#F59E0B"
   },
   tagsContainer: {
     flexDirection: "row",
@@ -2323,11 +1634,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
-  successCheckIcon: {
-    color: "#FFF",
-    fontSize: 24,
-    fontWeight: "bold"
-  },
   successAccentDot: {
     position: "absolute",
     borderRadius: 999,
@@ -2377,122 +1683,6 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 15,
     fontWeight: "700"
-  },
-  // Selection Screen Styles
-  selectContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    gap: theme.spacing.md
-  },
-  selectCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E2E8F0",
-    borderWidth: 1,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    gap: theme.spacing.md
-  },
-  selectCardActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: "#F0FDF4"
-  },
-  selectIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(11, 143, 100, 0.08)",
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  selectIconWrapActive: {
-    backgroundColor: theme.colors.primary
-  },
-  selectTextWrap: {
-    flex: 1
-  },
-  selectMethodLabel: {
-    color: theme.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: "700"
-  },
-  selectMethodDesc: {
-    color: "#64748B",
-    fontSize: 12,
-    marginTop: 2
-  },
-  promoInputCard: {
-    flexDirection: "row",
-    padding: theme.spacing.sm,
-    alignItems: "center",
-    gap: theme.spacing.sm,
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E2E8F0",
-    borderWidth: 1,
-    borderRadius: theme.radius.md
-  },
-  promoInput: {
-    flex: 1,
-    height: 40,
-    paddingHorizontal: theme.spacing.md,
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.radius.sm,
-    color: theme.colors.textPrimary,
-    fontSize: 14
-  },
-  applyBtn: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.md,
-    height: 40,
-    justifyContent: "center",
-    borderRadius: theme.radius.sm
-  },
-  applyBtnText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "700"
-  },
-  promoSectionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.xs
-  },
-  serviceIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: theme.radius.sm,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: theme.spacing.xs
-  },
-  serviceIconWrapSoft: {
-    width: 38,
-    height: 38,
-    borderRadius: theme.radius.sm,
-    backgroundColor: "rgba(11, 143, 100, 0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: theme.spacing.xs
-  },
-  selectServiceTagPill: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: 6,
-    paddingVertical: 2
-  },
-  selectServiceTagText: {
-    color: "#FFFFFF",
-    fontSize: 9,
-    fontWeight: "700"
-  },
-  selectServicePrice: {
-    color: theme.colors.primaryDark,
-    fontSize: 14,
-    fontWeight: "800"
   }
 });
 

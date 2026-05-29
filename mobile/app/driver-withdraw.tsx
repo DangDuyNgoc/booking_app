@@ -1,4 +1,6 @@
-﻿import { ScrollView, StyleSheet, Text, View } from "react-native";
+﻿import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { BottomTabBar } from "../components/customer/BottomTabBar";
 import { AppCard, SectionTitle } from "../components/ui/AppPrimitives";
 import { theme } from "../lib/theme";
@@ -7,7 +9,9 @@ export default function DriverWithdrawScreen() {
   return (
     <View style={styles.page}>
       <View style={styles.header}>
-        <Text style={styles.back}>←</Text>
+        <Pressable onPress={() => router.back()} hitSlop={15}>
+          <Ionicons name="chevron-back" size={24} color={theme.colors.primaryDark} />
+        </Pressable>
         <Text style={styles.title}>Rút Tiền</Text>
         <Text style={styles.help}>◔</Text>
       </View>
@@ -106,7 +110,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.md
   },
-  back: { fontSize: 20, color: theme.colors.primaryDark, width: 24 },
   title: { flex: 1, color: theme.colors.primary, fontSize: 30, fontWeight: "800" },
   help: { color: theme.colors.primary },
   content: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.md, paddingBottom: 150 },

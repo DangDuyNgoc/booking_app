@@ -1,7 +1,8 @@
-﻿import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { theme } from "../../lib/theme";
 import { AppCard } from "../ui/AppPrimitives";
 import { PrimaryButton } from "../ui/PrimaryButton";
+import { Ionicons } from "@expo/vector-icons";
 
 export function OrderProgressCard() {
   return (
@@ -27,11 +28,12 @@ export function OrderProgressCard() {
       </View>
 
       <View style={styles.actions}>
-        <View style={styles.ghostBtn}>
-          <Text style={styles.ghostText}>✉ Nhắn tin</Text>
-        </View>
+        <Pressable style={styles.ghostBtn}>
+          <Ionicons name="chatbubble-ellipses-outline" size={18} color={theme.colors.textPrimary} style={styles.btnIcon} />
+          <Text style={styles.ghostText}>Nhắn tin</Text>
+        </Pressable>
         <View style={styles.callBtn}>
-          <PrimaryButton label="☎ Gọi điện" />
+          <PrimaryButton label="Gọi điện" icon="call" />
         </View>
       </View>
     </AppCard>
@@ -103,11 +105,15 @@ const styles = StyleSheet.create({
   },
   ghostBtn: {
     alignItems: "center",
+    flexDirection: "row",
     backgroundColor: "#DCE7F7",
     borderRadius: theme.radius.pill,
     flex: 1,
     justifyContent: "center",
     minHeight: 44
+  },
+  btnIcon: {
+    marginRight: 6
   },
   ghostText: {
     color: theme.colors.textPrimary,
@@ -118,3 +124,4 @@ const styles = StyleSheet.create({
     flex: 1
   }
 });
+

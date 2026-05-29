@@ -1,4 +1,5 @@
-﻿import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
 import { BottomTabBar } from "../components/customer/BottomTabBar";
 import { HomeHeader } from "../components/customer/HomeHeader";
 import { OrderProgressCard } from "../components/customer/OrderProgressCard";
@@ -7,8 +8,13 @@ import { ServiceCard } from "../components/customer/ServiceCard";
 import { SectionTitle } from "../components/ui/AppPrimitives";
 import { SearchInput } from "../components/ui/SearchInput";
 import { theme } from "../lib/theme";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function CustomerScreen() {
+  const handleDeliveryPress = () => {
+    router.push("/booking");
+  };
+
   return (
     <View style={styles.page}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -22,19 +28,19 @@ export default function CustomerScreen() {
 
         <View style={styles.serviceRows}>
           <View style={styles.mainCol}>
-            <ServiceCard active icon="🏍" label="Giao Xe Máy" />
+            <ServiceCard active icon="motorbike" label="Giao Xe Máy" onPress={handleDeliveryPress} />
           </View>
           <View style={styles.sideCol}>
-            <ServiceCard icon="🚚" label="Giao Xe Tải" />
-            <ServiceCard icon="🍴" label="Đồ Ăn" />
+            <ServiceCard icon="truck" label="Giao Xe Tải" onPress={handleDeliveryPress} />
+            <ServiceCard icon="food" label="Đồ Ăn" />
           </View>
         </View>
 
         <View style={styles.miniActions}>
-          <ServiceCard icon="🚕" label="Gọi Xe" />
-          <ServiceCard icon="🛍" label="Đi Chợ" />
-          <ServiceCard icon="📦" label="Gửi Hàng" />
-          <ServiceCard icon="▦" label="Thêm" />
+          <ServiceCard icon="taxi" label="Gọi Xe" />
+          <ServiceCard icon="basket" label="Đi Chợ" />
+          <ServiceCard icon="package-variant-closed" label="Gửi Hàng" onPress={handleDeliveryPress} />
+          <ServiceCard icon="grid" label="Thêm" />
         </View>
 
         <View style={styles.block}>
@@ -44,7 +50,7 @@ export default function CustomerScreen() {
       </ScrollView>
 
       <View style={styles.fab}>
-        <Text style={styles.fabIcon}>🎧</Text>
+        <Ionicons name="headset-outline" size={22} color="#FFFFFF" />
       </View>
       <View style={styles.bottomBarWrap}>
         <BottomTabBar activeTab="home" />
@@ -52,6 +58,7 @@ export default function CustomerScreen() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   page: {
@@ -93,9 +100,6 @@ const styles = StyleSheet.create({
     right: theme.spacing.lg,
     bottom: 112,
     width: 48
-  },
-  fabIcon: {
-    fontSize: 21
   },
   bottomBarWrap: {
     bottom: 0,

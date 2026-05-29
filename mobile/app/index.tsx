@@ -1,42 +1,89 @@
-﻿import { Link } from "expo-router";
+﻿import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { theme } from "../lib/theme";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 type RoleCardProps = {
   title: string;
   subtitle: string;
-  emoji: string;
-  href: "/customer" | "/driver";
-  rightIcon: string;
+  iconName: string;
+  iconFamily: "ionicons" | "material";
+  color: string;
+  bgColor: string;
+  indicatorIcon: string;
+  selected: boolean;
+  onPress: () => void;
 };
 
-function RoleCard({ title, subtitle, emoji, href, rightIcon }: RoleCardProps) {
+function RoleCard({
+  title,
+  subtitle,
+  iconName,
+  iconFamily,
+  color,
+  bgColor,
+  indicatorIcon,
+  selected,
+  onPress
+}: RoleCardProps) {
   return (
-    <Link href={href} asChild>
-      <Pressable style={styles.roleCard}>
-        <View style={styles.avatarWrap}>
-          <Text style={styles.avatarEmoji}>{emoji}</Text>
-        </View>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.roleCard,
+        selected && [styles.roleCardSelected, { borderColor: color }],
+        pressed && styles.roleCardPressed
+      ]}
+    >
+      <View style={[styles.avatarWrap, { backgroundColor: bgColor }]}>
+        {iconFamily === "ionicons" ? (
+          <Ionicons name={iconName as any} size={48} color={color} />
+        ) : (
+          <MaterialCommunityIcons name={iconName as any} size={48} color={color} />
+        )}
+      </View>
 
-        <View style={styles.roleTitleRow}>
-          <Text style={styles.roleTitle}>{title}</Text>
-          <Text style={styles.roleIcon}>{rightIcon}</Text>
+      <View style={styles.roleTitleRow}>
+        <Text style={styles.roleTitle}>{title}</Text>
+        <View style={[styles.indicatorBadge, { backgroundColor: bgColor }]}>
+          <Ionicons name={indicatorIcon as any} size={14} color={color} />
         </View>
+      </View>
 
-        <Text style={styles.roleSubtitle}>{subtitle}</Text>
-      </Pressable>
-    </Link>
+      <Text style={styles.roleSubtitle}>{subtitle}</Text>
+
+      <View style={[styles.selectedMark, selected && { backgroundColor: color, borderColor: color }]}>
+        <Ionicons name={selected ? "checkmark" : "ellipse-outline"} size={15} color={selected ? "#FFFFFF" : "#94A3B8"} />
+      </View>
+    </Pressable>
   );
 }
 
 export default function RoleSelectionScreen() {
+  const router = useRouter();
+  const [selectedRole, setSelectedRole] = useState<"customer" | "driver" | null>(null);
+
+  const handleContinue = () => {
+    if (selectedRole === "customer") {
+      router.push("/customer");
+      return;
+    }
+
+    if (selectedRole === "driver") {
+      router.push("/driver");
+    }
+  };
+
   return (
     <View style={styles.page}>
       <View style={styles.headerBlock}>
+        <View style={styles.appIconContainer}>
+          <Ionicons name="cube" size={32} color="#086449" />
+        </View>
         <Text style={styles.headerTitle}>Bạn là ai?</Text>
         <Text style={styles.headerCopy}>
-          Vui lòng chọn vai trò của bạn để tiếp tục trải nghiệm dịch vụ ShipLogistics một cách tốt
-          nhất.
+          Vui lòng chọn vai trò của bạn để tiếp tục trải nghiệm dịch vụ ShipLogistics một cách tốt nhất.
         </Text>
       </View>
 
@@ -44,22 +91,43 @@ export default function RoleSelectionScreen() {
         <RoleCard
           title="Tôi là Khách hàng"
           subtitle="Gửi hàng nhanh chóng, theo dõi đơn hàng dễ dàng."
-          emoji="🎁"
-          href="/customer"
-          rightIcon="✔"
+          iconName="person"
+          iconFamily="ionicons"
+          color="#086449"
+          bgColor="#E6F4EA"
+          indicatorIcon="cube"
+          selected={selectedRole === "customer"}
+          onPress={() => setSelectedRole("customer")}
         />
 
         <RoleCard
           title="Tôi là Tài xế"
           subtitle="Nhận chuyến ngay, gia tăng thu nhập mỗi ngày."
-          emoji="🛵"
-          href="/driver"
-          rightIcon="🏍"
+          iconName="motorbike"
+          iconFamily="material"
+          color="#0284C7"
+          bgColor="#E0F2FE"
+          indicatorIcon="navigate"
+          selected={selectedRole === "driver"}
+          onPress={() => setSelectedRole("driver")}
         />
       </View>
 
+      <Pressable
+        onPress={handleContinue}
+        disabled={!selectedRole}
+        style={({ pressed }) => [
+          styles.continueButton,
+          !selectedRole && styles.continueButtonDisabled,
+          pressed && selectedRole && styles.continueButtonPressed
+        ]}
+      >
+        <Text style={styles.continueButtonText}>Tiếp tục</Text>
+      </Pressable>
+
       <View style={styles.supportRow}>
-        <Text style={styles.supportText}>◌ Bạn cần hỗ trợ?</Text>
+        <Ionicons name="headset-outline" size={16} color={theme.colors.textSecondary} style={{ marginRight: 6 }} />
+        <Text style={styles.supportText}>Bạn cần hỗ trợ?</Text>
       </View>
     </View>
   );
@@ -70,15 +138,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: 56,
+    paddingTop: 72,
     paddingBottom: theme.spacing.xl
   },
   headerBlock: {
     alignItems: "center"
   },
+  appIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: "#E6F4EA",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: theme.spacing.md,
+    shadowColor: "#086449",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2
+  },
   headerTitle: {
     color: theme.colors.primaryDark,
-    fontSize: 39,
+    fontSize: 32,
     fontWeight: "800"
   },
   headerCopy: {
@@ -95,55 +177,105 @@ const styles = StyleSheet.create({
   },
   roleCard: {
     alignItems: "center",
-    backgroundColor: "#F8FBFF",
-    borderColor: "#DCE6F3",
-    borderRadius: theme.radius.xl,
+    alignSelf: "stretch",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E2E8F0",
     borderWidth: 1,
-    minHeight: 210,
+    borderRadius: 24,
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg
+    paddingVertical: theme.spacing.lg,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2
+  },
+  roleCardSelected: {
+    borderWidth: 2,
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 4
+  },
+  roleCardPressed: {
+    backgroundColor: "#F8FAFC",
+    transform: [{ scale: 0.985 }]
   },
   avatarWrap: {
     alignItems: "center",
-    backgroundColor: "#D5DEE7",
     borderRadius: theme.radius.pill,
-    height: 116,
+    height: 100,
     justifyContent: "center",
-    width: 116
-  },
-  avatarEmoji: {
-    fontSize: 54
+    width: 100,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1
   },
   roleTitleRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 6,
+    gap: 8,
     marginTop: theme.spacing.md
   },
   roleTitle: {
     color: theme.colors.textPrimary,
-    fontSize: 36,
-    fontWeight: "800"
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "center"
   },
-  roleIcon: {
-    color: theme.colors.primary,
-    fontSize: 18,
-    fontWeight: "700"
+  indicatorBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center"
   },
   roleSubtitle: {
     color: theme.colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: theme.spacing.sm,
+    fontSize: 15,
+    lineHeight: 20,
+    marginTop: theme.spacing.xs,
     textAlign: "center"
+  },
+  selectedMark: {
+    alignItems: "center",
+    borderColor: "#CBD5E1",
+    borderRadius: theme.radius.pill,
+    borderWidth: 1,
+    height: 24,
+    justifyContent: "center",
+    marginTop: theme.spacing.md,
+    width: 24
+  },
+  continueButton: {
+    alignItems: "center",
+    backgroundColor: theme.colors.primaryDark,
+    borderRadius: theme.radius.md,
+    justifyContent: "center",
+    marginTop: theme.spacing.lg,
+    minHeight: 50
+  },
+  continueButtonDisabled: {
+    backgroundColor: "#94A3B8"
+  },
+  continueButtonPressed: {
+    opacity: 0.9
+  },
+  continueButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800"
   },
   supportRow: {
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: "auto"
   },
   supportText: {
     color: theme.colors.textSecondary,
     fontSize: 12,
-    fontWeight: "600"
+    fontWeight: "700"
   }
 });

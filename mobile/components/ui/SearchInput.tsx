@@ -1,10 +1,11 @@
-﻿import { StyleSheet, TextInput, View, Text } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 import { theme } from "../../lib/theme";
+import { Ionicons } from "@expo/vector-icons";
 
 export function SearchInput() {
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>⌕</Text>
+      <Ionicons name="search-outline" size={20} color="#6B7A90" />
       <TextInput placeholder="Giao đến đâu?" placeholderTextColor="#8A99AF" style={styles.input} />
     </View>
   );
@@ -22,14 +23,10 @@ const styles = StyleSheet.create({
     height: 52,
     paddingHorizontal: theme.spacing.lg
   },
-  icon: {
-    color: "#6B7A90",
-    fontSize: 16,
-    fontWeight: "700"
-  },
   input: {
     color: theme.colors.textPrimary,
     flex: 1,
     fontSize: 14
   }
 });
+

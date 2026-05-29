@@ -12,5 +12,4 @@ prisma/generated/
 *.log
 
 docs/
-
 tests/

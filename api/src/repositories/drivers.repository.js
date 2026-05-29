@@ -14,6 +14,85 @@ export class DriversRepository {
     });
   }
 
+  findProfileById(id) {
+    return prisma.driverProfile.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            email: true,
+            isActive: true
+          }
+        },
+        vehicles: {
+          where: { isActive: true },
+          orderBy: { createdAt: "desc" },
+          take: 1
+        }
+      }
+    });
+  }
+
+  async findManyVerifications({ status, page = 1, limit = 20 } = {}) {
+    const where = {
+      ...(status ? { verificationStatus: status } : {})
+    };
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      prisma.driverProfile.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { updatedAt: "desc" },
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              phone: true,
+              email: true,
+              isActive: true
+            }
+          },
+          vehicles: {
+            where: { isActive: true },
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        }
+      }),
+      prisma.driverProfile.count({ where })
+    ]);
+
+    return { items, total, page, limit };
+  }
+
+  updateVerificationStatus(id, data) {
+    return prisma.driverProfile.update({
+      where: { id },
+      data,
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            email: true,
+            isActive: true
+          }
+        },
+        vehicles: {
+          where: { isActive: true },
+          orderBy: { createdAt: "desc" },
+          take: 1
+        }
+      }
+    });
+  }
+
   async submitVerification(userId, data) {
     return prisma.$transaction(async (tx) => {
       const profile = await tx.driverProfile.upsert({

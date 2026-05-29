@@ -4,6 +4,7 @@ import { UsersRepository } from "../repositories/users.repository.js";
 import { UploadsService } from "./uploads.service.js";
 
 const vehicleTypes = new Set(["MOTORBIKE", "THREE_WHEELER", "TRUCK"]);
+const verificationStatuses = new Set(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"]);
 
 const documentFields = [
   ["portrait", "portrait", "driver-portrait"],
@@ -57,8 +58,87 @@ export class DriversService {
     return this.toResponse(updatedProfile);
   }
 
+  async getMyVerification(userId) {
+    const profile = await this.driversRepository.findProfileByUserId(userId);
+
+    if (!profile) {
+      throw new HttpError(404, "Driver verification not found");
+    }
+
+    return this.toResponse(profile);
+  }
+
+  async listVerifications(query = {}) {
+    const page = this.parsePositiveInteger(query.page, 1, 1000);
+    const limit = this.parsePositiveInteger(query.limit, 20, 100);
+    const status = query.status ? String(query.status).toUpperCase() : undefined;
+
+    if (status && !verificationStatuses.has(status)) {
+      throw new HttpError(400, "Invalid verification status");
+    }
+
+    const result = await this.driversRepository.findManyVerifications({ status, page, limit });
+
+    return {
+      ...result,
+      items: result.items.map((profile) => this.toResponse(profile))
+    };
+  }
+
+  async getVerificationById(id) {
+    const profile = await this.findExistingProfile(id);
+    return this.toResponse(profile);
+  }
+
+  async approveVerification(id) {
+    await this.findExistingProfile(id);
+
+    const profile = await this.driversRepository.updateVerificationStatus(id, {
+      verificationStatus: "APPROVED",
+      rejectionReason: null
+    });
+
+    return this.toResponse(profile);
+  }
+
+  async rejectVerification(id, body = {}) {
+    await this.findExistingProfile(id);
+    const rejectionReason = this.requiredText(body.rejectionReason, "rejectionReason");
+
+    const profile = await this.driversRepository.updateVerificationStatus(id, {
+      verificationStatus: "REJECTED",
+      rejectionReason
+    });
+
+    return this.toResponse(profile);
+  }
+
+  async findExistingProfile(id) {
+    const profile = await this.driversRepository.findProfileById(id);
+
+    if (!profile) {
+      throw new HttpError(404, "Driver verification not found");
+    }
+
+    return profile;
+  }
+
   async buildDocumentProfile(userId, currentProfile, files) {
     const normalized = {};
+    const missingRequiredFields = [];
+
+    for (const [inputKey, fieldPrefix] of documentFields) {
+      const file = this.getUploadedFile(files, inputKey);
+      const currentAsset = this.getCurrentAsset(currentProfile, fieldPrefix);
+
+      if (!file && !currentAsset?.url && requiredDocumentKeys.has(inputKey)) {
+        missingRequiredFields.push(inputKey);
+      }
+    }
+
+    if (missingRequiredFields.length > 0) {
+      throw new HttpError(400, `${missingRequiredFields.join(", ")} is required`);
+    }
 
     for (const [inputKey, fieldPrefix, purpose] of documentFields) {
       const file = this.getUploadedFile(files, inputKey);
@@ -66,10 +146,6 @@ export class DriversService {
       const asset = file
         ? await this.uploadsService.uploadImage(file, purpose, userId)
         : currentAsset;
-
-      if (!asset?.url && requiredDocumentKeys.has(inputKey)) {
-        throw new HttpError(400, `${inputKey} is required`);
-      }
 
       const normalizedAsset = asset ? this.normalizeAsset(asset, inputKey) : null;
       normalized[`${fieldPrefix}Url`] = normalizedAsset?.url ?? null;
@@ -193,6 +269,16 @@ export class DriversService {
     return parsed;
   }
 
+  parsePositiveInteger(value, fallback, max) {
+    const parsed = Number(value ?? fallback);
+
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      return fallback;
+    }
+
+    return Math.min(parsed, max);
+  }
+
   toResponse(profile) {
     return {
       id: profile.id,
@@ -200,6 +286,15 @@ export class DriversService {
       verificationStatus: profile.verificationStatus,
       availabilityStatus: profile.availabilityStatus ?? null,
       rejectionReason: profile.rejectionReason ?? null,
+      user: profile.user
+        ? {
+            id: profile.user.id,
+            fullName: profile.user.fullName ?? null,
+            phone: profile.user.phone ?? null,
+            email: profile.user.email ?? null,
+            isActive: profile.user.isActive
+          }
+        : undefined,
       documents: Object.fromEntries(
         documentFields.map(([inputKey, fieldPrefix]) => [
           inputKey,

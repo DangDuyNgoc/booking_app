@@ -43,6 +43,11 @@ enum VehicleType {
   TRUCK
 }
 
+enum OrderServiceType {
+  RIDE
+  DELIVERY
+}
+
 enum OrderStatus {
   PENDING
   SEARCHING_DRIVER
@@ -59,6 +64,23 @@ enum PaymentMethod {
   WALLET
   BANK_TRANSFER
   VIET_QR
+}
+
+enum PackageType {
+  LIGHT
+  BULKY
+  FRAGILE
+  FOOD
+  DOCUMENT
+  OTHER
+}
+
+enum PackageWeightRange {
+  UNDER_5KG
+  KG_5_10
+  KG_10_20
+  KG_20_30
+  OVER_30KG
 }
 
 enum WalletTransactionType {
@@ -186,6 +208,8 @@ model Order {
   driverProfile      DriverProfile? @relation("DriverOrders", fields: [driverProfileId], references: [id])
   vehicleId          String?
   vehicle            Vehicle?      @relation(fields: [vehicleId], references: [id])
+  requestedVehicleType VehicleType?
+  serviceType        OrderServiceType @default(DELIVERY)
   status             OrderStatus   @default(PENDING)
   paymentMethod      PaymentMethod @default(CASH)
   pickupAddress      String
@@ -203,14 +227,33 @@ model Order {
   pickupProofUrl     String?
   deliveryProofUrl   String?
   cancelReason       String?
+  passengerNote      String?
+  packageType        PackageType?
+  packageWeightRange PackageWeightRange?
+  packageNote        String?
+  recipientName      String?
+  recipientPhone     String?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   completedAt        DateTime?
   walletTransactions WalletTransaction[]
+  statusEvents       OrderStatusEvent[]
+}
+
+model OrderStatusEvent {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  message   String?
+  createdAt DateTime    @default(now())
+
+  @@index([orderId, createdAt])
 }
 
 model FareConfig {
   id             String      @id @default(cuid())
+  serviceType    OrderServiceType @default(DELIVERY)
   vehicleType    VehicleType
   vehicleId      String?
   vehicle        Vehicle?    @relation(fields: [vehicleId], references: [id])
@@ -221,6 +264,8 @@ model FareConfig {
   isActive       Boolean     @default(true)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+
+  @@index([serviceType, vehicleType, isActive])
 }
 
 model Wallet {

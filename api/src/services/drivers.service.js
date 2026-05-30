@@ -5,6 +5,7 @@ import { UploadsService } from "./uploads.service.js";
 
 const vehicleTypes = new Set(["MOTORBIKE", "THREE_WHEELER", "TRUCK"]);
 const verificationStatuses = new Set(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"]);
+const availabilityStatuses = new Set(["ONLINE", "OFFLINE", "BUSY"]);
 
 const documentFields = [
   ["portrait", "portrait", "driver-portrait"],
@@ -111,6 +112,27 @@ export class DriversService {
     });
 
     return this.toResponse(profile);
+  }
+
+  async updateMyAvailability(userId, body = {}) {
+    const profile = await this.driversRepository.findProfileByUserId(userId);
+
+    if (!profile) {
+      throw new HttpError(404, "Driver verification not found");
+    }
+
+    const availabilityStatus = this.normalizeAvailabilityStatus(body.availabilityStatus ?? body.status);
+
+    if (availabilityStatus === "ONLINE" && profile.verificationStatus !== "APPROVED") {
+      throw new HttpError(403, "Driver verification must be approved before going online");
+    }
+
+    const updatedProfile = await this.driversRepository.updateAvailabilityStatus(
+      profile.id,
+      availabilityStatus
+    );
+
+    return this.toResponse(updatedProfile);
   }
 
   async findExistingProfile(id) {
@@ -267,6 +289,16 @@ export class DriversService {
     }
 
     return parsed;
+  }
+
+  normalizeAvailabilityStatus(value) {
+    const normalized = String(value ?? "").toUpperCase();
+
+    if (!availabilityStatuses.has(normalized)) {
+      throw new HttpError(400, "Invalid availability status");
+    }
+
+    return normalized;
   }
 
   parsePositiveInteger(value, fallback, max) {

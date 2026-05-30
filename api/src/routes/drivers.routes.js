@@ -6,7 +6,8 @@ import {
   getVerificationById,
   listVerifications,
   rejectVerification,
-  submitMyVerification
+  submitMyVerification,
+  updateMyAvailability
 } from "../controllers/drivers.controller.js";
 import { requireAuth, requireRole } from "../middleware/auth.middleware.js";
 
@@ -34,7 +35,8 @@ export function createDriversRoutes() {
   router.use(requireAuth);
   router.get("/verification", getMyVerification);
   router.post("/verification", upload.fields(verificationFields), submitMyVerification);
-  
+  router.patch("/availability", updateMyAvailability);
+
   router.get("/admin/verifications", requireRole("ADMIN"), listVerifications);
   router.get("/admin/verifications/:id", requireRole("ADMIN"), getVerificationById);
   router.patch("/admin/verifications/:id/approve", requireRole("ADMIN"), approveVerification);

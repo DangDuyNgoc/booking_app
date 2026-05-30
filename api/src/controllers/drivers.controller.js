@@ -49,3 +49,11 @@ export async function rejectVerification(req, res, next) {
     next(error);
   }
 }
+
+export async function updateMyAvailability(req, res, next) {
+  try {
+    res.json(await driversService.updateMyAvailability(req.auth.userId, req.body));
+  } catch (error) {
+    next(error);
+  }
+}

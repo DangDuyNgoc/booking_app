@@ -93,6 +93,20 @@ export class DriversRepository {
     });
   }
 
+  updateAvailabilityStatus(id, availabilityStatus) {
+    return prisma.driverProfile.update({
+      where: { id },
+      data: { availabilityStatus },
+      include: {
+        vehicles: {
+          where: { isActive: true },
+          orderBy: { createdAt: "desc" },
+          take: 1
+        }
+      }
+    });
+  }
+
   async submitVerification(userId, data) {
     return prisma.$transaction(async (tx) => {
       const profile = await tx.driverProfile.upsert({
